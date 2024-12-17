@@ -10,4 +10,13 @@ describe("ThreadRepository interface", () => {
       "THREAD_REPOSITORY.METHOD_NOT_IMPLEMENTED",
     );
   });
+  it("should throw error when verifyThreadExists is called", async () => {
+    // Arrange
+    const threadRepository = new ThreadRepository();
+
+    // Action & Assert
+    await expect(
+      threadRepository.verifyThreadExists("thread-123"),
+    ).rejects.toThrowError("THREAD_REPOSITORY.METHOD_NOT_IMPLEMENTED");
+  });
 });

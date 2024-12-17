@@ -1,4 +1,5 @@
 const AddedThread = require("../AddedThread");
+const ThreadRepository = require("../../ThreadRepository");
 
 describe("AddedThread entity", () => {
   it("should throw error when payload does not contain needed property", () => {
@@ -39,5 +40,14 @@ describe("AddedThread entity", () => {
     expect(addedThread.id).toBe(payload.id);
     expect(addedThread.title).toBe(payload.title);
     expect(addedThread.owner).toBe(payload.owner);
+  });
+  it("should throw error when invoke abstract behavior", async () => {
+    // Arrange
+    const threadRepository = new ThreadRepository();
+
+    // Action & Assert
+    await expect(threadRepository.addThread({})).rejects.toThrowError(
+      "THREAD_REPOSITORY.METHOD_NOT_IMPLEMENTED",
+    );
   });
 });

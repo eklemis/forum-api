@@ -25,12 +25,48 @@ const LogoutUserUseCase = require("../Applications/use_case/LogoutUserUseCase");
 const RefreshAuthenticationUseCase = require("../Applications/use_case/RefreshAuthenticationUseCase");
 const ThreadRepositoryPostgres = require("./repository/ThreadRepositoryPostgres");
 const AddThreadUseCase = require("../Applications/use_case/AddThreadUseCase");
+const AddCommentUseCase = require("../Applications/use_case/AddCommentUseCase");
+const CommentRepositoryPostgres = require("./repository/CommentRepositoryPostgres");
 
 // creating container
 const container = createContainer();
 
 // registering services and repository
 container.register([
+  {
+    key: CommentRepositoryPostgres.name,
+    Class: CommentRepositoryPostgres,
+    parameter: {
+      dependencies: [
+        { concrete: pool }, // Directly use the pool instance
+        { concrete: nanoid }, // Directly use nanoid for ID generation
+      ],
+    },
+  },
+  {
+    key: ThreadRepositoryPostgres.name,
+    Class: ThreadRepositoryPostgres,
+    parameter: {
+      dependencies: [{ concrete: pool }],
+    },
+  },
+  {
+    key: AddCommentUseCase.name,
+    Class: AddCommentUseCase,
+    parameter: {
+      injectType: "destructuring",
+      dependencies: [
+        {
+          name: "commentRepository",
+          internal: CommentRepositoryPostgres.name,
+        },
+        {
+          name: "threadRepository",
+          internal: ThreadRepositoryPostgres.name,
+        },
+      ],
+    },
+  },
   {
     key: UserRepository.name,
     Class: UserRepositoryPostgres,
@@ -171,6 +207,17 @@ container.register([
       injectType: "destructuring",
       dependencies: [
         { name: "threadRepository", internal: "ThreadRepository" },
+      ],
+    },
+  },
+  {
+    key: AddCommentUseCase.name,
+    Class: AddCommentUseCase,
+    parameter: {
+      injectType: "destructuring",
+      dependencies: [
+        { name: "commentRepository", internal: CommentRepositoryPostgres.name },
+        { name: "threadRepository", internal: ThreadRepositoryPostgres.name },
       ],
     },
   },
