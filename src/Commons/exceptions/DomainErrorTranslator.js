@@ -1,4 +1,6 @@
 const InvariantError = require("./InvariantError");
+const AuthorizationError = require("./AuthorizationError");
+const NotFoundError = require("./NotFoundError");
 
 const DomainErrorTranslator = {
   translate(error) {
@@ -34,12 +36,35 @@ DomainErrorTranslator._directories = {
   "DELETE_AUTHENTICATION_USE_CASE.PAYLOAD_NOT_MEET_DATA_TYPE_SPECIFICATION":
     new InvariantError("refresh token harus string"),
 
-  // New mappings for AddThreadUseCase
+  // AddThreadUseCase errors
   "ADD_THREAD_USE_CASE.NOT_CONTAIN_NEEDED_PROPERTY": new InvariantError(
     "tidak dapat membuat thread baru karena properti yang dibutuhkan tidak ada",
   ),
   "ADD_THREAD_USE_CASE.NOT_MEET_DATA_TYPE_SPECIFICATION": new InvariantError(
     "tidak dapat membuat thread baru karena tipe data tidak sesuai",
+  ),
+
+  // AddCommentUseCase errors
+  "ADD_COMMENT_USE_CASE.NOT_CONTAIN_NEEDED_PROPERTY": new InvariantError(
+    "tidak dapat menambahkan komentar baru karena properti yang dibutuhkan tidak ada",
+  ),
+  "ADD_COMMENT_USE_CASE.NOT_MEET_DATA_TYPE_SPECIFICATION": new InvariantError(
+    "tidak dapat menambahkan komentar baru karena tipe data tidak sesuai",
+  ),
+
+  // DeleteCommentUseCase errors
+  "DELETE_COMMENT_USE_CASE.THREAD_NOT_FOUND": new NotFoundError(
+    "thread yang diminta tidak ditemukan",
+  ),
+  "DELETE_COMMENT_USE_CASE.COMMENT_NOT_FOUND": new NotFoundError(
+    "komentar yang diminta tidak ditemukan",
+  ),
+  "DELETE_COMMENT_USE_CASE.NOT_AUTHORIZED": new AuthorizationError(
+    "anda tidak berhak menghapus komentar ini",
+  ),
+
+  "THREAD_REPOSITORY.THREAD_NOT_FOUND": new NotFoundError(
+    "thread yang diminta tidak ditemukan",
   ),
 };
 

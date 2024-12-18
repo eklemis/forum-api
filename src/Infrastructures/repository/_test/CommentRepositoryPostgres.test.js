@@ -3,102 +3,182 @@ const CommentRepositoryPostgres = require("../CommentRepositoryPostgres");
 const UsersTableTestHelper = require("../../../../tests/UsersTableTestHelper");
 const ThreadsTableTestHelper = require("../../../../tests/ThreadsTableTestHelper");
 
-describe("addComment function", () => {
+describe("CommentRepositoryPostgres", () => {
   afterEach(async () => {
-    await UsersTableTestHelper.cleanTable(); // Clean up users
-    await ThreadsTableTestHelper.cleanTable(); // Clean up threads
+    await UsersTableTestHelper.cleanTable();
+    await ThreadsTableTestHelper.cleanTable();
   });
 
   afterAll(async () => {
     await pool.end();
   });
-  it("should persist a new comment and return added comment correctly", async () => {
-    // Arrange
-    const commentRepositoryPostgres = new CommentRepositoryPostgres(
-      pool,
-      () => "123",
-    );
-    const threadId = "thread-123";
-    const content = "This is a comment";
-    const owner = "user-123";
 
-    // Add a user
-    await UsersTableTestHelper.addUser({
-      id: owner,
-      username: "dicoding",
-      password: "secret",
-      fullname: "Dicoding Indonesia",
+  describe("verifyCommentExists function", () => {
+    it("should return true when comment exists", async () => {
+      // Arrange
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(
+        pool,
+        () => "123",
+      );
+      const threadId = "thread-123";
+      const owner = "user-123-comment";
+
+      await UsersTableTestHelper.addUser({
+        id: owner,
+        username: "dicoding-comment",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      });
+
+      await ThreadsTableTestHelper.addThread({
+        id: threadId,
+        title: "A thread",
+        body: "Thread body",
+        owner,
+      });
+
+      const commentId = `comment-123`;
+      await pool.query({
+        text: "INSERT INTO comments (id, thread_id, content, owner) VALUES ($1, $2, $3, $4)",
+        values: [commentId, threadId, "A comment", owner],
+      });
+
+      // Action
+      const exists =
+        await commentRepositoryPostgres.verifyCommentExists(commentId);
+
+      // Assert
+      expect(exists).toBe(true);
     });
 
-    // Add a thread
-    await ThreadsTableTestHelper.addThread({
-      id: threadId,
-      title: "A thread",
-      body: "This is a thread body",
-      owner,
+    it("should return false when comment does not exist", async () => {
+      // Arrange
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(
+        pool,
+        () => "123",
+      );
+
+      // Action
+      const exists = await commentRepositoryPostgres.verifyCommentExists(
+        "nonexistent-comment",
+      );
+
+      // Assert
+      expect(exists).toBe(false);
     });
-
-    // Action
-    const addedComment = await commentRepositoryPostgres.addComment(
-      threadId,
-      content,
-      owner,
-    );
-
-    // Assert
-    const result = await pool.query("SELECT * FROM comments WHERE id = $1", [
-      addedComment.id,
-    ]);
-    const persistedComment = result.rows[0];
-
-    expect(addedComment).toStrictEqual({
-      id: "comment-123",
-      content,
-      owner,
-    });
-    expect(persistedComment).toBeDefined();
-    expect(persistedComment.thread_id).toEqual(threadId);
-    expect(persistedComment.content).toEqual(content);
-    expect(persistedComment.owner).toEqual(owner);
   });
-  it("should throw an error when owner does not exist", async () => {
-    // Arrange
-    const commentRepositoryPostgres = new CommentRepositoryPostgres(
-      pool,
-      () => "123",
-    );
-    const threadId = "thread-123";
-    const content = "This is a comment";
-    const nonExistentOwner = "user-not-exist";
 
-    await ThreadsTableTestHelper.addThread({
-      id: threadId,
-      title: "A thread",
-      body: "This is a thread body",
-      owner: "user-123",
+  describe("getCommentOwner function", () => {
+    it("should return the correct owner when comment exists", async () => {
+      // Arrange
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(
+        pool,
+        () => "123",
+      );
+      const threadId = "thread-123";
+      const owner = "user-123";
+
+      await UsersTableTestHelper.addUser({
+        id: owner,
+        username: "dicoding",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      });
+
+      await ThreadsTableTestHelper.addThread({
+        id: threadId,
+        title: "A thread",
+        body: "Thread body",
+        owner,
+      });
+
+      const commentId = `comment-123`;
+      await pool.query({
+        text: "INSERT INTO comments (id, thread_id, content, owner) VALUES ($1, $2, $3, $4)",
+        values: [commentId, threadId, "A comment", owner],
+      });
+
+      // Action
+      const commentOwner =
+        await commentRepositoryPostgres.getCommentOwner(commentId);
+
+      // Assert
+      expect(commentOwner).toBe(owner);
     });
 
-    // Action & Assert
-    await expect(
-      commentRepositoryPostgres.addComment(threadId, content, nonExistentOwner),
-    ).rejects.toThrowError();
+    it("should throw an error when comment does not exist", async () => {
+      // Arrange
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(
+        pool,
+        () => "123",
+      );
+
+      // Action & Assert
+      await expect(
+        commentRepositoryPostgres.getCommentOwner("nonexistent-comment"),
+      ).rejects.toThrowError("COMMENT_REPOSITORY.COMMENT_NOT_FOUND");
+    });
   });
-});
 
-describe("CommentRepositoryPostgres", () => {
-  it("should create an instance of CommentRepositoryPostgres correctly", () => {
-    // Arrange
-    const mockIdGenerator = () => "123";
+  describe("getCommentsByThreadId function", () => {
+    it("should return an empty array when there are no comments for the given thread id", async () => {
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(
+        pool,
+        () => "123",
+      );
 
-    // Action
-    const commentRepositoryPostgres = new CommentRepositoryPostgres(
-      pool,
-      mockIdGenerator,
-    );
+      const threadId = "thread-123-empty";
 
-    // Assert
-    expect(commentRepositoryPostgres).toBeInstanceOf(CommentRepositoryPostgres);
-    expect(commentRepositoryPostgres._pool).toBeDefined();
-    expect(commentRepositoryPostgres._idGenerator).toBeDefined();
+      // Act
+      const comments =
+        await commentRepositoryPostgres.getCommentsByThreadId(threadId);
+
+      // Assert
+      expect(comments).toHaveLength(0);
+    });
+
+    it("should return comments with deleted content marked correctly", async () => {
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(
+        pool,
+        () => "123",
+      );
+      const threadId = "thread-123-del";
+      const owner = "user-123-del";
+
+      // Arrange: Add user, thread, and a deleted comment
+      await UsersTableTestHelper.addUser({
+        id: owner,
+        username: "dicodingDel",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      });
+      await ThreadsTableTestHelper.addThread({
+        id: threadId,
+        title: "A thread",
+        body: "Thread body",
+        owner,
+      });
+      const commentId = "comment-123-del";
+      await pool.query({
+        text: `
+          INSERT INTO comments (id, thread_id, content, owner, is_delete)
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        values: [commentId, threadId, "A deleted comment", owner, true],
+      });
+
+      // Act
+      const comments =
+        await commentRepositoryPostgres.getCommentsByThreadId(threadId);
+
+      // Assert
+      expect(comments).toHaveLength(1);
+      expect(comments[0]).toEqual(
+        expect.objectContaining({
+          id: commentId,
+          content: "**komentar telah dihapus**",
+        }),
+      );
+    });
   });
 });

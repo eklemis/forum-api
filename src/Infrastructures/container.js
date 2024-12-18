@@ -27,6 +27,8 @@ const ThreadRepositoryPostgres = require("./repository/ThreadRepositoryPostgres"
 const AddThreadUseCase = require("../Applications/use_case/AddThreadUseCase");
 const AddCommentUseCase = require("../Applications/use_case/AddCommentUseCase");
 const CommentRepositoryPostgres = require("./repository/CommentRepositoryPostgres");
+const DeleteCommentUseCase = require("../Applications/use_case/DeleteCommentUseCase");
+const GetThreadDetailUseCase = require("../Applications/use_case/GetThreadDetailUseCase"); // Add this line
 
 // creating container
 const container = createContainer();
@@ -48,23 +50,6 @@ container.register([
     Class: ThreadRepositoryPostgres,
     parameter: {
       dependencies: [{ concrete: pool }],
-    },
-  },
-  {
-    key: AddCommentUseCase.name,
-    Class: AddCommentUseCase,
-    parameter: {
-      injectType: "destructuring",
-      dependencies: [
-        {
-          name: "commentRepository",
-          internal: CommentRepositoryPostgres.name,
-        },
-        {
-          name: "threadRepository",
-          internal: ThreadRepositoryPostgres.name,
-        },
-      ],
     },
   },
   {
@@ -115,7 +100,7 @@ container.register([
     },
   },
   {
-    key: "ThreadRepository",
+    key: ThreadRepositoryPostgres.name,
     Class: ThreadRepositoryPostgres,
     parameter: {
       dependencies: [
@@ -206,7 +191,7 @@ container.register([
     parameter: {
       injectType: "destructuring",
       dependencies: [
-        { name: "threadRepository", internal: "ThreadRepository" },
+        { name: "threadRepository", internal: ThreadRepositoryPostgres.name },
       ],
     },
   },
@@ -218,6 +203,28 @@ container.register([
       dependencies: [
         { name: "commentRepository", internal: CommentRepositoryPostgres.name },
         { name: "threadRepository", internal: ThreadRepositoryPostgres.name },
+      ],
+    },
+  },
+  {
+    key: DeleteCommentUseCase.name,
+    Class: DeleteCommentUseCase,
+    parameter: {
+      injectType: "destructuring",
+      dependencies: [
+        { name: "commentRepository", internal: CommentRepositoryPostgres.name },
+        { name: "threadRepository", internal: ThreadRepositoryPostgres.name },
+      ],
+    },
+  },
+  {
+    key: GetThreadDetailUseCase.name, // Register GetThreadDetailUseCase
+    Class: GetThreadDetailUseCase,
+    parameter: {
+      injectType: "destructuring",
+      dependencies: [
+        { name: "threadRepository", internal: ThreadRepositoryPostgres.name },
+        { name: "commentRepository", internal: CommentRepositoryPostgres.name },
       ],
     },
   },

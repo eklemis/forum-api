@@ -1,5 +1,7 @@
 const pool = require("../../database/postgres/pool");
 const ThreadsTableTestHelper = require("../../../../tests/ThreadsTableTestHelper");
+const UsersTableTestHelper = require("../../../../tests/UsersTableTestHelper");
+
 const ThreadRepositoryPostgres = require("../ThreadRepositoryPostgres");
 const AddedThread = require("../../../Domains/threads/entities/AddedThread");
 
@@ -91,6 +93,53 @@ describe("ThreadRepositoryPostgres", () => {
       await expect(
         threadRepositoryPostgres.addThread(threadPayload),
       ).rejects.toThrowError("Database connection failed");
+    });
+  });
+
+  describe("getThreadById function", () => {
+    it("should return thread details when the thread exists", async () => {
+      // Arrange
+      const threadRepository = new ThreadRepositoryPostgres(pool);
+      const userId = "user-123-GTBI";
+      const threadId = "thread-123";
+
+      await UsersTableTestHelper.addUser({
+        id: userId,
+        username: "dicodingGTBI",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      });
+
+      await ThreadsTableTestHelper.addThread({
+        id: threadId,
+        title: "A thread title",
+        body: "Thread body",
+        owner: userId,
+      });
+
+      // Act
+      const thread = await threadRepository.getThreadById(threadId);
+
+      // Assert: Compare individual properties to allow for `date` flexibility
+      expect(thread.id).toBe(threadId);
+      expect(thread.title).toBe("A thread title");
+      expect(thread.body).toBe("Thread body");
+      expect(thread.username).toBe("dicodingGTBI");
+      expect(thread.date).toBeInstanceOf(Date);
+
+      // Optional: Validate the date is in ISO format
+      const isoDate = thread.date.toISOString();
+      expect(isoDate).toEqual(expect.any(String));
+    });
+
+    it("should throw NotFoundError when the thread does not exist", async () => {
+      // Arrange
+      const threadRepository = new ThreadRepositoryPostgres(pool);
+
+      // Act & Assert
+      await expect(
+        threadRepository.getThreadById("nonexistent-thread"),
+      ).rejects.toThrowError("THREAD_REPOSITORY.THREAD_NOT_FOUND");
     });
   });
 });

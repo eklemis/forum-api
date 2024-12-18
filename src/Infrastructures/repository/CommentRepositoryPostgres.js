@@ -17,6 +17,60 @@ class CommentRepositoryPostgres extends CommentRepository {
     const result = await this._pool.query(query);
     return result.rows[0];
   }
+
+  async deleteComment(commentId) {
+    const query = {
+      text: "UPDATE comments SET is_delete = TRUE WHERE id = $1",
+      values: [commentId],
+    };
+
+    await this._pool.query(query);
+  }
+  async verifyCommentExists(commentId) {
+    const query = {
+      text: "SELECT id FROM comments WHERE id = $1",
+      values: [commentId],
+    };
+
+    const result = await this._pool.query(query);
+
+    return result.rowCount > 0; // Returns true if comment exists, false otherwise
+  }
+  async getCommentOwner(commentId) {
+    const query = {
+      text: "SELECT owner FROM comments WHERE id = $1",
+      values: [commentId],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (result.rowCount === 0) {
+      throw new Error("COMMENT_REPOSITORY.COMMENT_NOT_FOUND");
+    }
+
+    return result.rows[0].owner;
+  }
+  async getCommentsByThreadId(threadId) {
+    const query = {
+      text: `
+        SELECT c.id, c.content, c.date, u.username, c.is_delete
+        FROM comments c
+        JOIN users u ON c.owner = u.id
+        WHERE c.thread_id = $1
+        ORDER BY c.date ASC
+      `,
+      values: [threadId],
+    };
+
+    const result = await this._pool.query(query);
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      username: row.username,
+      date: row.date,
+      content: row.is_delete ? "**komentar telah dihapus**" : row.content,
+    }));
+  }
 }
 
 module.exports = CommentRepositoryPostgres;
