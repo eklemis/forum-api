@@ -512,4 +512,211 @@ describe("/threads endpoint", () => {
       expect(responseJson.message).toBeDefined();
     });
   });
+  describe("when POST /threads/{threadId}/comments/{commentId}/replies", () => {
+    it("should respond 201 and persist reply when request is valid", async () => {
+      const server = await createServer(container);
+
+      // Arrange: Add user, thread, and comment
+      const userPayload = {
+        username: "dicodingReplies",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      };
+      await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload,
+      });
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/authentications",
+        payload: {
+          username: userPayload.username,
+          password: userPayload.password,
+        },
+      });
+
+      const {
+        data: { accessToken },
+      } = JSON.parse(loginResponse.payload);
+
+      const threadResponse = await server.inject({
+        method: "POST",
+        url: "/threads",
+        payload: {
+          title: "A thread",
+          body: "Thread body",
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const { addedThread } = JSON.parse(threadResponse.payload).data;
+
+      const commentResponse = await server.inject({
+        method: "POST",
+        url: `/threads/${addedThread.id}/comments`,
+        payload: {
+          content: "A comment",
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const { addedComment } = JSON.parse(commentResponse.payload).data;
+
+      // Action: Add a reply
+      const requestPayload = { content: "A reply to the comment" };
+      const response = await server.inject({
+        method: "POST",
+        url: `/threads/${addedThread.id}/comments/${addedComment.id}/replies`,
+        payload: requestPayload,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(201);
+      expect(responseJson.status).toEqual("success");
+      expect(responseJson.data.addedReply).toBeDefined();
+      expect(responseJson.data.addedReply.content).toEqual(
+        requestPayload.content,
+      );
+    });
+
+    it("should respond 400 when request payload is invalid", async () => {
+      // Arrange
+      const server = await createServer(container);
+
+      const userPayload = {
+        username: "dicoding",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      };
+      await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload,
+      });
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/authentications",
+        payload: {
+          username: userPayload.username,
+          password: userPayload.password,
+        },
+      });
+
+      const {
+        data: { accessToken },
+      } = JSON.parse(loginResponse.payload);
+
+      const threadResponse = await server.inject({
+        method: "POST",
+        url: "/threads",
+        payload: {
+          title: "A thread",
+          body: "Thread body",
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const { addedThread } = JSON.parse(threadResponse.payload).data;
+
+      const commentResponse = await server.inject({
+        method: "POST",
+        url: `/threads/${addedThread.id}/comments`,
+        payload: { content: "A comment" },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      const { addedComment } = JSON.parse(commentResponse.payload).data;
+
+      // Send invalid payload
+      const invalidPayload = {}; // Missing `content`
+      const response = await server.inject({
+        method: "POST",
+        url: `/threads/${addedThread.id}/comments/${addedComment.id}/replies`,
+        payload: invalidPayload,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(400);
+      expect(responseJson.status).toEqual("fail");
+      expect(responseJson.message).toBeDefined();
+    });
+
+    it("should respond 404 when the thread or comment does not exist", async () => {
+      const server = await createServer(container);
+
+      // Arrange: Add user
+      const userPayload = {
+        username: "dicoding",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      };
+      await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload,
+      });
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/authentications",
+        payload: {
+          username: userPayload.username,
+          password: userPayload.password,
+        },
+      });
+
+      const {
+        data: { accessToken },
+      } = JSON.parse(loginResponse.payload);
+
+      // Action: Add a reply to non-existent thread or comment
+      const requestPayload = { content: "A reply" };
+      const response = await server.inject({
+        method: "POST",
+        url: `/threads/nonexistent-thread/comments/nonexistent-comment/replies`,
+        payload: requestPayload,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(404);
+      expect(responseJson.status).toEqual("fail");
+      expect(responseJson.message).toBeDefined();
+    });
+
+    it("should respond 401 when no access token is provided", async () => {
+      const server = await createServer(container);
+
+      // Action: Add a reply without a valid token
+      const requestPayload = { content: "A reply" };
+      const response = await server.inject({
+        method: "POST",
+        url: `/threads/thread-123/comments/comment-123/replies`,
+        payload: requestPayload,
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(401);
+      expect(responseJson.error).toEqual("Unauthorized");
+    });
+  });
 });

@@ -66,6 +66,17 @@ DomainErrorTranslator._directories = {
   "THREAD_REPOSITORY.THREAD_NOT_FOUND": new NotFoundError(
     "thread yang diminta tidak ditemukan",
   ),
+
+  "ADD_REPLY_USE_CASE.NOT_CONTAIN_NEEDED_PROPERTY": new InvariantError(
+    "tidak dapat menambahkan balasan karena properti yang dibutuhkan tidak ada",
+  ),
+  "ADD_REPLY_USE_CASE.NOT_MEET_DATA_TYPE_SPECIFICATION": new InvariantError(
+    "tidak dapat menambahkan balasan karena tipe data tidak sesuai",
+  ),
+
+  "REPLY_REPOSITORY.COMMENT_NOT_FOUND": new NotFoundError(
+    "komentar yang diminta tidak ditemukan",
+  ),
 };
 
 module.exports = DomainErrorTranslator;
