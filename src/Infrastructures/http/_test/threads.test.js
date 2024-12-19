@@ -2,6 +2,8 @@ const pool = require("../../database/postgres/pool");
 const ThreadsTableTestHelper = require("../../../../tests/ThreadsTableTestHelper");
 const UsersTableTestHelper = require("../../../../tests/UsersTableTestHelper");
 const AuthenticationsTableTestHelper = require("../../../../tests/AuthenticationsTableTestHelper");
+const CommentsTableTestHelper = require("../../../../tests/CommentsTableTestHelper");
+const RepliesTableTestHelper = require("../../../../tests/RepliesTableTestHelper");
 const container = require("../../container");
 const createServer = require("../createServer");
 
@@ -717,6 +719,210 @@ describe("/threads endpoint", () => {
       const responseJson = JSON.parse(response.payload);
       expect(response.statusCode).toEqual(401);
       expect(responseJson.error).toEqual("Unauthorized");
+    });
+  });
+  describe("when DELETE /threads/{threadId}/comments/{commentId}/replies/{replyId}", () => {
+    it("should respond 200 when the reply is successfully deleted", async () => {
+      const server = await createServer(container);
+
+      // Arrange
+      const userPayload = {
+        username: `dicodingDelReply`,
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      };
+
+      // Create user and login
+      const postUser = await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload,
+      });
+
+      const userId = postUser.result.data.addedUser.id;
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/authentications",
+        payload: {
+          username: userPayload.username,
+          password: userPayload.password,
+        },
+      });
+
+      const {
+        data: { accessToken },
+      } = JSON.parse(loginResponse.payload);
+
+      // Add thread, comment, and reply
+      const threadId = "thread-123";
+      const commentId = "comment-123";
+      const replyId = "reply-123";
+
+      await ThreadsTableTestHelper.addThread({
+        id: threadId,
+        title: "A thread",
+        body: "Thread body",
+        owner: userId,
+      });
+
+      await CommentsTableTestHelper.addComment({
+        id: commentId,
+        content: "A comment",
+        owner: userId, // Use the correct user ID
+        threadId,
+      });
+
+      await RepliesTableTestHelper.addReply({
+        id: replyId,
+        content: "A reply",
+        owner: userId, // Use the correct user ID
+        commentId,
+      });
+
+      // Act
+      const response = await server.inject({
+        method: "DELETE",
+        url: `/threads/${threadId}/comments/${commentId}/replies/${replyId}`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(200);
+      expect(responseJson.status).toEqual("success");
+    });
+
+    it("should respond 403 when the user is not the owner of the reply", async () => {
+      const server = await createServer(container);
+
+      // Arrange
+      const userPayload1 = {
+        username: `ownerUser`,
+        password: "secret",
+        fullname: "Owner User",
+      };
+
+      const userPayload2 = {
+        username: `otherUser`,
+        password: "secret",
+        fullname: "Other User",
+      };
+
+      // Create users and login
+      const postUser1 = await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload1,
+      });
+      const ownerId = postUser1.result.data.addedUser.id;
+
+      const postUser2 = await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload2,
+      });
+      const otherUserId = postUser2.result.data.addedUser.id;
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/authentications",
+        payload: {
+          username: userPayload2.username,
+          password: userPayload2.password,
+        },
+      });
+      const {
+        data: { accessToken },
+      } = JSON.parse(loginResponse.payload);
+
+      // Add thread, comment, and reply as ownerUser
+      const threadId = "thread-123";
+      const commentId = "comment-123";
+      const replyId = "reply-123";
+
+      await ThreadsTableTestHelper.addThread({
+        id: threadId,
+        title: "A thread",
+        body: "Thread body",
+        owner: ownerId,
+      });
+
+      await CommentsTableTestHelper.addComment({
+        id: commentId,
+        content: "A comment",
+        owner: ownerId,
+        threadId,
+      });
+
+      await RepliesTableTestHelper.addReply({
+        id: replyId,
+        content: "A reply",
+        owner: ownerId,
+        commentId,
+      });
+
+      // Act: otherUser attempts to delete the reply
+      const response = await server.inject({
+        method: "DELETE",
+        url: `/threads/${threadId}/comments/${commentId}/replies/${replyId}`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(403);
+      expect(responseJson.status).toEqual("fail");
+      expect(responseJson.message).toBeDefined();
+    });
+
+    it("should respond 404 when the thread, comment, or reply does not exist", async () => {
+      const server = await createServer(container);
+
+      // Arrange
+      const userPayload = {
+        username: "dicoding404",
+        password: "secret",
+        fullname: "Dicoding Indonesia",
+      };
+
+      const postUser = await server.inject({
+        method: "POST",
+        url: "/users",
+        payload: userPayload,
+      });
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/authentications",
+        payload: {
+          username: userPayload.username,
+          password: userPayload.password,
+        },
+      });
+
+      const {
+        data: { accessToken },
+      } = JSON.parse(loginResponse.payload);
+
+      // Act: Attempt to delete a non-existent reply
+      const response = await server.inject({
+        method: "DELETE",
+        url: "/threads/nonexistent-thread/comments/nonexistent-comment/replies/nonexistent-reply",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(404);
+      expect(responseJson.status).toEqual("fail");
+      expect(responseJson.message).toBeDefined();
     });
   });
 });

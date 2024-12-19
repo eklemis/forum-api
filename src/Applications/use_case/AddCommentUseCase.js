@@ -19,6 +19,7 @@ class AddCommentUseCase {
     }
     const threadExists =
       await this._threadRepository.verifyThreadExists(threadId);
+
     if (!threadExists) {
       throw new Error("ADD_COMMENT_USE_CASE.THREAD_NOT_FOUND");
     }

@@ -5,6 +5,9 @@ describe("ReplyRepository interface", () => {
     { methodName: "addReply", args: ["commentId", "content", "owner"] },
     { methodName: "deleteReplyById", args: ["replyId"] },
     { methodName: "getRepliesByCommentId", args: ["commentId"] },
+    { methodName: "verifyReplyExists", args: ["replyId"] },
+    { methodName: "getReplyOwner", args: ["replyId"] },
+    { methodName: "verifyReplyOwnership", args: ["replyId,", "owner"] },
   ];
 
   it.each(abstractMethods)(

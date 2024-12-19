@@ -1,7 +1,8 @@
 class GetThreadDetailUseCase {
-  constructor({ threadRepository, commentRepository }) {
+  constructor({ threadRepository, commentRepository, replyRepository }) {
     this._threadRepository = threadRepository;
     this._commentRepository = commentRepository;
+    this._replyRepository = replyRepository;
   }
 
   async execute({ threadId }) {
@@ -16,7 +17,7 @@ class GetThreadDetailUseCase {
       await this._commentRepository.getCommentsByThreadId(threadId);
 
     // Map and format the comments
-    const formattedComments = comments.map((comment) => ({
+    const formattedComments = await comments.map((comment) => ({
       id: comment.id,
       username: comment.username,
       date: comment.date,
@@ -24,6 +25,12 @@ class GetThreadDetailUseCase {
         ? "**komentar telah dihapus**"
         : comment.content,
     }));
+    for (const comment of formattedComments) {
+      const replies = await this._replyRepository.getRepliesByCommentId(
+        comment.id,
+      );
+      comment.replies = replies; // Attach replies to the comment
+    }
 
     // Return the complete thread details
     return {

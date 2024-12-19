@@ -16,7 +16,7 @@ const RepliesTableTestHelper = {
         VALUES ($1, $2, $3, $4, $5, $6)`,
       values: [id, commentId, content, owner, date, isDelete],
     };
-    console.log("Adding reply:", query.values);
+
     await pool.query(query);
   },
 

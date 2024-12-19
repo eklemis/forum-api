@@ -52,7 +52,6 @@ class ReplyRepositoryPostgres extends ReplyRepository {
     };
 
     const result = await this._pool.query(query);
-    console.log("Retrieved replies:", result.rows);
 
     return result.rows.map((reply) => ({
       id: reply.id,
@@ -60,6 +59,49 @@ class ReplyRepositoryPostgres extends ReplyRepository {
       date: reply.date,
       content: reply.is_delete ? "**balasan telah dihapus**" : reply.content,
     }));
+  }
+
+  async getReplyOwner(replyId) {
+    const query = {
+      text: `
+        SELECT owner
+        FROM replies
+        WHERE id = $1`,
+      values: [replyId],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rowCount) {
+      throw new Error("REPLY_REPOSITORY.REPLY_NOT_FOUND");
+    }
+
+    return result.rows[0].owner;
+  }
+
+  async verifyReplyExists(replyId) {
+    const query = {
+      text: "SELECT id FROM replies WHERE id = $1",
+      values: [replyId],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rowCount) {
+      throw new Error("REPLY_REPOSITORY.REPLY_NOT_FOUND");
+    }
+  }
+  async verifyReplyOwnership(replyId, owner) {
+    const query = {
+      text: `SELECT owner FROM replies WHERE id = $1`,
+      values: [replyId],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (result.rows[0].owner !== owner) {
+      throw new Error("REPLY_REPOSITORY.NOT_AUTHORIZED");
+    }
   }
 }
 

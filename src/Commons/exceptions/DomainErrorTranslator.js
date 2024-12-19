@@ -51,6 +51,9 @@ DomainErrorTranslator._directories = {
   "ADD_COMMENT_USE_CASE.NOT_MEET_DATA_TYPE_SPECIFICATION": new InvariantError(
     "tidak dapat menambahkan komentar baru karena tipe data tidak sesuai",
   ),
+  "ADD_COMMENT_USE_CASE.THREAD_NOT_FOUND": new NotFoundError(
+    "thread yang diminta tidak ditemukan",
+  ),
 
   // DeleteCommentUseCase errors
   "DELETE_COMMENT_USE_CASE.THREAD_NOT_FOUND": new NotFoundError(
@@ -76,6 +79,13 @@ DomainErrorTranslator._directories = {
 
   "REPLY_REPOSITORY.COMMENT_NOT_FOUND": new NotFoundError(
     "komentar yang diminta tidak ditemukan",
+  ),
+
+  "REPLY_REPOSITORY.REPLY_NOT_FOUND": new NotFoundError(
+    "Balasan tidak ditemukan",
+  ),
+  "REPLY_REPOSITORY.NOT_AUTHORIZED": new AuthorizationError(
+    "Anda tidak berhak menghapus balasan ini",
   ),
 };
 

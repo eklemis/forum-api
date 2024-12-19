@@ -1,6 +1,8 @@
 const GetThreadDetailUseCase = require("../GetThreadDetailUseCase");
 const ThreadRepository = require("../../../Domains/threads/ThreadRepository");
 const CommentRepository = require("../../../Domains/comments/CommentRepository");
+const ReplyRepositoryPostgres = require("../../../Infrastructures/repository/ReplyRepositoryPostgres");
+const pool = require("../../../Infrastructures/database/postgres/pool");
 
 describe("GetThreadDetailUseCase", () => {
   it("should orchestrate the get thread detail action correctly", async () => {
@@ -39,18 +41,21 @@ describe("GetThreadDetailUseCase", () => {
           username: "user1",
           date: "2024-12-18T13:00:00.000Z",
           content: "This is a comment",
+          replies: [],
         },
         {
           id: "comment-2",
           username: "user2",
           date: "2024-12-18T13:05:00.000Z",
           content: "**komentar telah dihapus**",
+          replies: [],
         },
       ],
     };
 
-    const mockThreadRepository = new ThreadRepository();
-    const mockCommentRepository = new CommentRepository();
+    const mockThreadRepository = new ThreadRepository(pool);
+    const mockCommentRepository = new CommentRepository(pool, () => "123");
+    const mockReplyRepository = new ReplyRepositoryPostgres(pool, () => "123");
 
     mockThreadRepository.getThreadById = jest
       .fn()
@@ -62,6 +67,7 @@ describe("GetThreadDetailUseCase", () => {
     const getThreadDetailUseCase = new GetThreadDetailUseCase({
       threadRepository: mockThreadRepository,
       commentRepository: mockCommentRepository,
+      replyRepository: mockReplyRepository,
     });
 
     // Action
