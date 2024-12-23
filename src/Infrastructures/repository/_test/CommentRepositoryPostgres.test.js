@@ -173,12 +173,15 @@ describe("CommentRepositoryPostgres", () => {
 
       // Assert
       expect(comments).toHaveLength(1);
-      expect(comments[0]).toEqual(
-        expect.objectContaining({
+      expect(comments).toStrictEqual([
+        {
           id: commentId,
-          content: "**komentar telah dihapus**",
-        }),
-      );
+          username: "dicodingDel",
+          date: expect.any(Date),
+          content: "A deleted comment",
+          is_delete: true,
+        },
+      ]);
     });
   });
 });

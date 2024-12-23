@@ -63,6 +63,7 @@ describe("GetThreadDetailUseCase", () => {
     mockCommentRepository.getCommentsByThreadId = jest
       .fn()
       .mockResolvedValue(expectedComments);
+    mockReplyRepository.getRepliesByCommentId = jest.fn().mockResolvedValue([]);
 
     const getThreadDetailUseCase = new GetThreadDetailUseCase({
       threadRepository: mockThreadRepository,
@@ -78,6 +79,13 @@ describe("GetThreadDetailUseCase", () => {
     expect(mockThreadRepository.getThreadById).toBeCalledWith(threadId);
     expect(mockCommentRepository.getCommentsByThreadId).toBeCalledWith(
       threadId,
+    );
+    expect(mockReplyRepository.getRepliesByCommentId).toBeCalledTimes(2);
+    expect(mockReplyRepository.getRepliesByCommentId).toHaveBeenCalledWith(
+      "comment-1",
+    );
+    expect(mockReplyRepository.getRepliesByCommentId).toHaveBeenCalledWith(
+      "comment-2",
     );
   });
 

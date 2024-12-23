@@ -53,12 +53,7 @@ class ReplyRepositoryPostgres extends ReplyRepository {
 
     const result = await this._pool.query(query);
 
-    return result.rows.map((reply) => ({
-      id: reply.id,
-      username: reply.username,
-      date: reply.date,
-      content: reply.is_delete ? "**balasan telah dihapus**" : reply.content,
-    }));
+    return result.rows;
   }
 
   async getReplyOwner(replyId) {

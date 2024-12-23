@@ -4,6 +4,7 @@ const UsersTableTestHelper = require("../../../../tests/UsersTableTestHelper");
 const ThreadsTableTestHelper = require("../../../../tests/ThreadsTableTestHelper");
 const CommentsTableTestHelper = require("../../../../tests/CommentsTableTestHelper");
 const RepliesTableTestHelper = require("../../../../tests/RepliesTableTestHelper");
+const Reply = require("../../../Domains/replies/entities/Reply");
 
 describe("ReplyRepositoryPostgres", () => {
   afterEach(async () => {
@@ -267,16 +268,18 @@ describe("ReplyRepositoryPostgres", () => {
       const replyRepository = new ReplyRepositoryPostgres(pool, {});
 
       // Action
-      const replies = await replyRepository.getRepliesByCommentId(commentId);
+      const rawReplies = await replyRepository.getRepliesByCommentId(commentId);
+      const replies = rawReplies.map((reply) => new Reply(reply)); // Use Reply entity
 
       // Assert
       expect(replies).toHaveLength(1);
-      expect(replies[0]).toEqual(
-        expect.objectContaining({
+      expect(replies[0]).toStrictEqual(
+        new Reply({
           id: replyId,
           username,
-          date: expect.any(Date),
-          content: "**balasan telah dihapus**", // Validate deleted content
+          date: expect.any(Date), // Ensure date is still matched as a Date
+          content,
+          is_delete: true,
         }),
       );
     });

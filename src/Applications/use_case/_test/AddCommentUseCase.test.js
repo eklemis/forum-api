@@ -1,6 +1,7 @@
 const AddCommentUseCase = require("../AddCommentUseCase");
 const CommentRepository = require("../../../Domains/comments/CommentRepository");
 const ThreadRepository = require("../../../Domains/threads/ThreadRepository");
+const AddedComment = require("../../../Domains/comments/entities/AddedComment");
 
 describe("AddCommentUseCase", () => {
   it("should throw error when payload does not contain needed property", async () => {
@@ -113,11 +114,13 @@ describe("AddCommentUseCase", () => {
       "a comment",
       "user-123",
     );
-
-    expect(addedComment).toEqual({
-      id: "comment-123",
-      content: "a comment",
-      owner: "user-123",
-    });
+    expect(addedComment).toBeInstanceOf(AddedComment);
+    expect(addedComment).toStrictEqual(
+      new AddedComment({
+        id: "comment-123",
+        content: "a comment",
+        owner: "user-123",
+      }),
+    );
   });
 });

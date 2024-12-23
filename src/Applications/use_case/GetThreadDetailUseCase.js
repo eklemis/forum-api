@@ -1,3 +1,6 @@
+const Comment = require("../../Domains/comments/entities/Comment");
+const Reply = require("../../Domains/replies/entities/Reply");
+
 class GetThreadDetailUseCase {
   constructor({ threadRepository, commentRepository, replyRepository }) {
     this._threadRepository = threadRepository;
@@ -13,23 +16,21 @@ class GetThreadDetailUseCase {
     }
 
     // Retrieve comments related to the thread
-    const comments =
+    const rawComments =
       await this._commentRepository.getCommentsByThreadId(threadId);
 
-    // Map and format the comments
-    const formattedComments = await comments.map((comment) => ({
-      id: comment.id,
-      username: comment.username,
-      date: comment.date,
-      content: comment.is_delete
-        ? "**komentar telah dihapus**"
-        : comment.content,
-    }));
+    // Map raw comments to Comment entities
+    const formattedComments = rawComments.map(
+      (comment) => new Comment(comment),
+    );
+
+    // Attach replies to each comment
     for (const comment of formattedComments) {
-      const replies = await this._replyRepository.getRepliesByCommentId(
+      const rawReplies = await this._replyRepository.getRepliesByCommentId(
         comment.id,
       );
-      comment.replies = replies; // Attach replies to the comment
+      const replies = rawReplies.map((reply) => new Reply(reply));
+      comment.replies = replies;
     }
 
     // Return the complete thread details
