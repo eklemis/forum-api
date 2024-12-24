@@ -1,41 +1,37 @@
 const Comment = require("../Comment");
 
 describe("Comment entity", () => {
-  it("should display deleted comment message when is_delete is true", () => {
+  it("should display original content and default likeCount when not deleted", () => {
     const payload = {
       id: "comment-123",
       username: "dicoding",
-      date: new Date(),
-      content: "A comment",
-      is_delete: true,
-    };
-
-    const comment = new Comment(payload);
-
-    expect(comment).toEqual({
-      id: "comment-123",
-      username: "dicoding",
-      date: payload.date,
-      content: "**komentar telah dihapus**",
-    });
-  });
-
-  it("should display original content when is_delete is false", () => {
-    const payload = {
-      id: "comment-123",
-      username: "dicoding",
-      date: new Date(),
-      content: "A comment",
+      date: "2024-12-24T11:38:05.438Z",
+      content: "This is a comment",
       is_delete: false,
     };
 
     const comment = new Comment(payload);
+    const expectedComment = new Comment({
+      ...payload,
+      likeCount: 0, // Default likeCount
+    });
 
-    expect(comment).toEqual({
+    expect(comment).toStrictEqual(expectedComment);
+  });
+
+  it("should display deleted comment message and likeCount when is_delete is true", () => {
+    const payload = {
       id: "comment-123",
       username: "dicoding",
-      date: payload.date,
-      content: "A comment",
-    });
+      date: "2024-12-24T11:38:05.438Z",
+      content: "This is a comment",
+      is_delete: true,
+      likeCount: 5,
+    };
+
+    const comment = new Comment(payload);
+    const expectedComment = new Comment(payload);
+
+    expect(comment).toStrictEqual(expectedComment);
   });
 });

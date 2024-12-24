@@ -87,6 +87,12 @@ DomainErrorTranslator._directories = {
   "REPLY_REPOSITORY.NOT_AUTHORIZED": new AuthorizationError(
     "Anda tidak berhak menghapus balasan ini",
   ),
+  "TOGGLE_COMMENT_LIKE_USECASE.COMMENT_NOT_FOUND": new NotFoundError(
+    "komentar yang diminta tidak ditemukan",
+  ),
+  "TOGGLE_COMMENT_LIKE_USECASE.COMMENT_NOT_FOUND": new NotFoundError(
+    "komentar yang diminta tidak ditemukan",
+  ),
 };
 
 module.exports = DomainErrorTranslator;

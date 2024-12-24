@@ -34,7 +34,9 @@ class CommentRepositoryPostgres extends CommentRepository {
 
     const result = await this._pool.query(query);
 
-    return result.rowCount > 0; // Returns true if comment exists, false otherwise
+    // Returns true if comment exists, false otherwise
+
+    return result.rowCount > 0;
   }
   async getCommentOwner(commentId) {
     const query = {
@@ -65,6 +67,44 @@ class CommentRepositoryPostgres extends CommentRepository {
     const result = await this._pool.query(query);
 
     return result.rows;
+  }
+  async checkUserLikedComment(userId, commentId) {
+    const query = {
+      text: "SELECT id FROM user_comment_likes WHERE user_id = $1 AND comment_id = $2",
+      values: [userId, commentId],
+    };
+
+    const result = await this._pool.query(query);
+    return result.rowCount > 0; // Returns true if the user liked the comment, false otherwise
+  }
+  async likeComment(userId, commentId) {
+    const query = {
+      text: `
+        INSERT INTO user_comment_likes (user_id, comment_id)
+        VALUES ($1, $2)
+      `,
+      values: [userId, commentId],
+    };
+
+    await this._pool.query(query);
+  }
+
+  async unlikeComment(userId, commentId) {
+    const query = {
+      text: "DELETE FROM user_comment_likes WHERE user_id = $1 AND comment_id = $2",
+      values: [userId, commentId],
+    };
+
+    await this._pool.query(query);
+  }
+  async getLikeCount(commentId) {
+    const query = {
+      text: "SELECT COUNT(*) AS like_count FROM user_comment_likes WHERE comment_id = $1",
+      values: [commentId],
+    };
+
+    const result = await this._pool.query(query);
+    return parseInt(result.rows[0].like_count, 10); // Return the number of likes
   }
 }
 

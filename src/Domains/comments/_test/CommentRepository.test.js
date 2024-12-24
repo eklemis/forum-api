@@ -7,6 +7,10 @@ describe("CommentRepository interface", () => {
     { methodName: "verifyCommentExists", args: ["commentId"] },
     { methodName: "getCommentOwner", args: ["commentId"] },
     { methodName: "getCommentsByThreadId", args: ["threadId"] },
+    { methodName: "checkUserLikedComment", args: ["userId", "commentId"] }, // New method
+    { methodName: "likeComment", args: ["userId", "commentId"] }, // New method
+    { methodName: "unlikeComment", args: ["userId", "commentId"] }, // New method
+    { methodName: "getLikeCount", args: ["commentId"] }, // New method
   ];
 
   it.each(abstractMethods)(
