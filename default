@@ -18,7 +18,7 @@
 
 # Default server configuration
 #
-limit_req_zone $binary_remote_addr zone=one:10m rate=1000r/m;
+limit_req_zone $binary_remote_addr zone=one:10m rate=90r/m;
 server {
 
 	# SSL configuration
