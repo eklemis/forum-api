@@ -20,8 +20,13 @@ class GetThreadDetailUseCase {
       await this._commentRepository.getCommentsByThreadId(threadId);
 
     // Map raw comments to Comment entities
-    const formattedComments = rawComments.map(
-      (comment) => new Comment(comment),
+    const formattedComments = await Promise.all(
+      rawComments.map(async (comment) => {
+        const likeCount = await this._commentRepository.getLikeCount(
+          comment.id,
+        );
+        return new Comment({ ...comment, likeCount });
+      }),
     );
 
     // Attach replies to each comment
